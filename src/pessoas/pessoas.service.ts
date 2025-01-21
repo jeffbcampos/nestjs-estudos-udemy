@@ -50,11 +50,24 @@ export class PessoasService {
   }
 
   update(id: number, updatePessoaDto: UpdatePessoaDto) {
-    
+
+    const updatePessoa = this.pessoaRepository.update(id, updatePessoaDto);
+
+    return updatePessoa;
     
   }
 
   remove(id: number) {
-    return `This action removes a #${id} pessoa`;
+    const pessoa = this.pessoaRepository.findOne({
+      where: {
+        id: id
+      }
+    });
+
+    if (!pessoa) {
+      throw new NotFoundException('Pessoa não encontrada');
+    }
+
+    this.pessoaRepository.delete(id);
   }
 }
