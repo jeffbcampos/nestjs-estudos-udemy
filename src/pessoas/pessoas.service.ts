@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePessoaDto } from './dto/create-pessoa.dto';
 import { UpdatePessoaDto } from './dto/update-pessoa.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -17,6 +17,16 @@ export class PessoasService {
 
     if (!createPessoaDto.nome || !createPessoaDto.email || !createPessoaDto.passwordHash) {
       throw new BadRequestException('Nome, email e passwordHash são obrigatórios');
+    }
+
+    const pessoaExistente = await this.pessoaRepository.findOne({
+      where: {
+        email: createPessoaDto.email
+      }
+    })
+
+    if (pessoaExistente) {
+      throw new ConflictException('Email já cadastrado');
     }
     
     const salt = await bcrypt.genSalt(10);
@@ -49,11 +59,20 @@ export class PessoasService {
     return pessoa;
   }
 
-  update(id: number, updatePessoaDto: UpdatePessoaDto) {
+  async update(id: number, updatePessoaDto: UpdatePessoaDto) {
+    const pessoa = await this.pessoaRepository.findOne({
+      where: {
+        id: id
+      }
+    });
+    
+    if (!pessoa) {
+      throw new NotFoundException('Pessoa não encontrada');
+    }
 
-    const updatePessoa = this.pessoaRepository.update(id, updatePessoaDto);
+    await this.pessoaRepository.update(id, updatePessoaDto);
 
-    return updatePessoa;
+    return {status: 'success', message: 'Pessoa atualizada com sucesso'};
     
   }
 
