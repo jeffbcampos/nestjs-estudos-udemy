@@ -15,34 +15,40 @@ export class PessoasService {
 
   async create(createPessoaDto: CreatePessoaDto) {
 
-    if (!createPessoaDto.nome || !createPessoaDto.email || !createPessoaDto.passwordHash) {
-      throw new BadRequestException('Nome, email e passwordHash são obrigatórios');
-    }
+    try {
 
-    const pessoaExistente = await this.pessoaRepository.findOne({
-      where: {
-        email: createPessoaDto.email
+      if (!createPessoaDto.nome || !createPessoaDto.email || !createPessoaDto.passwordHash) {
+        throw new BadRequestException('Nome, email e passwordHash são obrigatórios');
       }
-    })
 
-    if (pessoaExistente) {
-      throw new ConflictException('Email já cadastrado');
-    }
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(createPessoaDto.passwordHash, salt);
+
+      const newPessoa = await this.pessoaRepository.save({
+        ...createPessoaDto,
+        passwordHash: hashedPassword
+      });
+
+      return newPessoa;
+      
+    } catch (error: any) {
+      if (error.code === '23505') {
+        throw new ConflictException('Email já cadastrado');
+      }
+
+      throw error;
+    }    
     
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(createPessoaDto.passwordHash, salt);
-
-
-    const newPessoa = await this.pessoaRepository.save({
-      ...createPessoaDto,
-      passwordHash: hashedPassword
-    });
-
-    return newPessoa;
   }
 
-  findAll() {
-    return this.pessoaRepository.find();
+  async findAll() {
+    const pessoas = await this.pessoaRepository.find({
+      order: {
+        nome: 'ASC'
+      }
+    });
+
+    return pessoas;
   }
 
   async findOne(id: number) {
@@ -68,6 +74,13 @@ export class PessoasService {
     
     if (!pessoa) {
       throw new NotFoundException('Pessoa não encontrada');
+    }
+
+    if(updatePessoaDto.passwordHash) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(updatePessoaDto.passwordHash, salt);
+
+      updatePessoaDto.passwordHash = hashedPassword;
     }
 
     await this.pessoaRepository.update(id, updatePessoaDto);

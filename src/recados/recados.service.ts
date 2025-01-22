@@ -1,3 +1,4 @@
+import { PessoasService } from './../pessoas/pessoas.service';
 import { CreateRecadoDto } from './dtos/create-recado.dto';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Recado } from './entities/recado.entity';
@@ -9,7 +10,8 @@ import { Repository } from 'typeorm';
 export class RecadosService {
     constructor(
         @InjectRepository(Recado)
-        private readonly recadoRepository: Repository<Recado>
+        private readonly recadoRepository: Repository<Recado>,
+        private readonly pessoasService: PessoasService
     ) {}    
     async findAll() {
         const recados = await this.recadoRepository.find();
@@ -32,9 +34,16 @@ export class RecadosService {
     }
 
     async create(createRecadoDto: CreateRecadoDto) {
+        const { deId, paraId } = createRecadoDto;
 
-        const novoRecado = await this.recadoRepository.save({           
-            ...createRecadoDto,
+        const de = await this.pessoasService.findOne(deId);
+
+        const para = await this.pessoasService.findOne(paraId);
+
+        const novoRecado = await this.recadoRepository.save({
+            texto: createRecadoDto.texto,           
+            de: de,
+            para: para,
             lido: false,
             data: new Date()
         });

@@ -3,6 +3,7 @@ import { CreateRecadoDto } from "./create-recado.dto";
 import { Optional } from "@nestjs/common";
 import { IsBoolean } from "class-validator";
 import { Exclude } from "class-transformer";
+import { Pessoa } from "src/pessoas/entities/pessoa.entity";
 
 export class UpdateRecadoDto extends PartialType(CreateRecadoDto) {
     @Optional()
@@ -10,8 +11,8 @@ export class UpdateRecadoDto extends PartialType(CreateRecadoDto) {
     lido?: boolean;
 
     @Exclude()
-    de?: string;
+    de?: Pessoa;
 
     @Exclude()
-    para?: string;
+    para?: Pessoa;
 }
