@@ -14,7 +14,19 @@ export class RecadosService {
         private readonly pessoasService: PessoasService
     ) {}    
     async findAll() {
-        const recados = await this.recadoRepository.find();
+        const recados = await this.recadoRepository.find({
+            relations: ['de', 'para'],
+            select: {
+                de: {
+                    id: true,
+                    nome: true
+                },
+                para: {
+                    id: true,
+                    nome: true
+                }
+            }
+        });
         return recados;
     }
 
@@ -23,6 +35,17 @@ export class RecadosService {
         const recado = await this.recadoRepository.findOne({
             where: {
                 id: idParam
+            },
+            relations: ['de', 'para'],
+            select: {
+                de: {
+                    id: true,
+                    nome: true
+                },
+                para: {
+                    id: true,
+                    nome: true
+                }
             }
         });
         
@@ -48,7 +71,15 @@ export class RecadosService {
             data: new Date()
         });
 
-        return novoRecado;
+        return {
+            ...novoRecado,
+            de: {
+                id: novoRecado.de.id,
+            },
+            para: {
+                id: novoRecado.para.id,
+            }
+        }
     }
 
     async update(id: number, updateRecadoDto: UpdateRecadoDto) {
