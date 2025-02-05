@@ -24,6 +24,9 @@ export class Pessoa {
     @UpdateDateColumn()
     updatedAt: Date;
 
+    @Column({ nullable: true })    
+    role: string | null;
+
     @OneToMany(() => Recado, recado => recado.de)
     recadosEnviados: Recado[];
 

@@ -5,6 +5,7 @@ import { Recado } from './entities/recado.entity';
 import { UpdateRecadoDto } from './dtos/update-recado.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { PaginationDTO } from 'src/common/dto/pagination.dto';
 
 @Injectable()
 export class RecadosService {
@@ -13,8 +14,12 @@ export class RecadosService {
         private readonly recadoRepository: Repository<Recado>,
         private readonly pessoasService: PessoasService
     ) {}    
-    async findAll() {
+    async findAll(paginationDTO?: PaginationDTO) {
+        const { limit = 10, offset = 0 } = paginationDTO;
+        
         const recados = await this.recadoRepository.find({
+            take: limit,
+            skip: offset,
             relations: ['de', 'para'],
             select: {
                 de: {
@@ -85,19 +90,18 @@ export class RecadosService {
     async update(id: number, updateRecadoDto: UpdateRecadoDto) {
         const idParam = Number(id);
                 
-        const recadoExistente = await this.recadoRepository.findOne({
-            where: {
-                id: idParam
-            }
-        });
+        const recadoExistente = await this.findOne(idParam);
 
         if (!recadoExistente) {
             throw new NotFoundException('Recado não encontrado');
         }
 
-        await this.recadoRepository.update(idParam, updateRecadoDto);
+        recadoExistente.texto = updateRecadoDto?.texto ?? recadoExistente.texto;
+        recadoExistente.lido = updateRecadoDto?.lido ?? recadoExistente.lido;
 
-        return {status: 'success', message: 'Recado atualizado com sucesso'};
+        await this.recadoRepository.update(idParam, recadoExistente);
+
+        return recadoExistente;
         
     }
 

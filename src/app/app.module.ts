@@ -5,6 +5,7 @@ import { RecadosModule } from 'src/recados/recados.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { configDotenv } from 'dotenv';
 import { PessoasModule } from 'src/pessoas/pessoas.module';
+
 configDotenv();
 @Module({
   imports: [
@@ -17,12 +18,15 @@ configDotenv();
       database: process.env.DB_NAME,
       autoLoadEntities: true,
       synchronize: true,
-    }),
+    }),    
     RecadosModule,
     PessoasModule,
   ],
   controllers: [AppController],
   providers: [AppService],
+  exports: []
 })
+
 export class AppModule {
+  
 }

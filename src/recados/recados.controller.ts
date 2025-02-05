@@ -1,7 +1,8 @@
-import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { RecadosService } from './recados.service';
 import { CreateRecadoDto } from './dtos/create-recado.dto';
 import { UpdateRecadoDto } from './dtos/update-recado.dto';
+import { PaginationDTO } from 'src/common/dto/pagination.dto';
 
 @Controller('recados')
 export class RecadosController {
@@ -10,8 +11,9 @@ export class RecadosController {
     ){}
 
     @Get()
-    findAll() {
-        return this.recadosService.findAll();
+    findAll(@Query() paginationDTO: PaginationDTO) {
+        
+        return this.recadosService.findAll(paginationDTO);
     }
 
     @Get(':id')

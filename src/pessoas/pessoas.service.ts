@@ -1,3 +1,4 @@
+import { AuthService } from './../auth/auth.service';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePessoaDto } from './dto/create-pessoa.dto';
 import { UpdatePessoaDto } from './dto/update-pessoa.dto';
@@ -5,12 +6,15 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Pessoa } from './entities/pessoa.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { EncrypterProvider } from 'src/providers/encrypter.provider';
 
 @Injectable()
 export class PessoasService {
   constructor(
     @InjectRepository(Pessoa)
-    private readonly pessoaRepository: Repository<Pessoa>
+    private readonly pessoaRepository: Repository<Pessoa>,
+    private readonly encrypterProvider: EncrypterProvider, 
+    private readonly authService: AuthService   
   ) {}
 
   async create(createPessoaDto: CreatePessoaDto) {
@@ -20,13 +24,12 @@ export class PessoasService {
       if (!createPessoaDto.nome || !createPessoaDto.email || !createPessoaDto.passwordHash) {
         throw new BadRequestException('Nome, email e passwordHash são obrigatórios');
       }
-
-      const salt = await bcrypt.genSalt(10);
-      const hashedPassword = await bcrypt.hash(createPessoaDto.passwordHash, salt);
+      
+      const passwordHash = await this.encrypterProvider.hash(createPessoaDto.passwordHash);
 
       const newPessoa = await this.pessoaRepository.save({
         ...createPessoaDto,
-        passwordHash: hashedPassword
+        passwordHash: passwordHash
       });
 
       return newPessoa;
@@ -39,6 +42,37 @@ export class PessoasService {
       throw error;
     }    
     
+  }
+
+  async login(email: string, password: string) {    
+    const pessoa = await this.pessoaRepository.findOne({
+      where: {
+        email: email
+      }
+    })   
+
+    if (!pessoa) {
+      throw new NotFoundException('Pessoa não encontrada');
+    }    
+
+    const passwordVerification = await this.encrypterProvider.compare(password, pessoa.passwordHash);
+
+    if (!passwordVerification) {
+      throw new BadRequestException('Senha Incorreta')
+    }
+    
+    const payload = {
+      id: pessoa.id,
+      nome: pessoa.nome,
+      role: pessoa.role
+    }
+
+    const token = await this.authService.generateToken(payload);
+
+    return {
+      message: 'success',
+      token: token
+    }
   }
 
   async findAll() {
